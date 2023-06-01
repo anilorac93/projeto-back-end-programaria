@@ -1,14 +1,12 @@
 const express = require ('express');
 const router = express.Router();
-const { v4: uuidv4 } = require('uuid');
-
+const cors = require('cors');
 const conectaBancooDeDados = require('./bancoDeDados');
 conectaBancooDeDados();
-
 const Mulher = require('./mulherModel');
-
 const app = express();
 app.use(express.json());
+app.use(cors());
 const porta = 3333;
 
 //GET
@@ -23,54 +21,60 @@ async function mostraMulheres(request, response) {
 };
 
 // POST
-function criaMulher(request, response) {
-    const novaMulher = {
-        id: uuidv4(),
+async function criaMulher(request, response) {
+    const novaMulher = new Mulher({
         nome: request.body.nome,
         imagem: request.body.imagem,
-        minibio: request.body.minibio
-    }
+        minibio: request.body.minibio,
+        citacao: request.body.citacao
+    });
 
-    mulheres.push(novaMulher);
-
-    response.json(mulheres);
+    try {
+        const mulherCriada = await novaMulher.save();
+        response.status(201).json(mulherCriada);
+    } catch {
+        console.log(erro);
+    };
 };
 
 //PATCH
-function corrigeMulher(request, response) {
-    function encontraMulher(mulher) {
-        if(mulher.id === request.params.id) {
-            return mulher;
+async function corrigeMulher(request, response) {
+    try {
+        const mulherEncontrada = await Mulher.findById(request.params.id);
+
+        if(request.body.nome) {
+            mulherEncontrada.nome = request.body.nome;
         };
-    };
-    const mulherEncontrada = mulheres.find(encontraMulher);
+    
+        if(request.body.minibio) {
+            mulherEncontrada.minibio = request.body.minibio;
+        };
+    
+        if(request.body.imagem) {
+            mulherEncontrada = request.body.imagem;
+        };
 
-    if(request.body.nome) {
-        mulherEncontrada.nome = request.body.nome;
-    };
+        if(request.body.citacao) {
+            mulherEncontrada = citacao.body.citacao;
+        };
 
-    if(request.body.minibio) {
-        mulherEncontrada.minibio = request.body.minibio;
-    };
+        const mulherAtualizadaNoBancoDeDados = await mulherEncontrada.save();
 
-    if(request.body.imagem) {
-        mulherEncontrada = request.body.imagem;
+        response.json(mulherAtualizadaNoBancoDeDados);
+        
+    } catch(erro) {
+        console.log(erro);
     };
-
-    response.json(mulheres);
 };
 
 //DELETE
-function deletaMulher(request, response) {
-    function todasMenosEla(mulher) {
-        if(mulher.id !== request.params.id) {
-                return mulher;
-        };
+async function deletaMulher(request, response) {
+    try {
+        await Mulher.findByIdAndDelete(request, params.id);
+        response.json({ mensagem: 'Mulher deletada com sucesso!'});
+    } catch(erro) {
+        console.log(erro);
     };
-
-    const mulheresQueFicam = mulheres.filter(todasMenosEla);
-
-    response.json(mulheresQueFicam);
 };
 
 app.use(router.get('/mulheres', mostraMulheres));
